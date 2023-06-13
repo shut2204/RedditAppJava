@@ -1,4 +1,4 @@
-package com.example.redditapp.model;
+package com.example.redditapp.models;
 
 public class Post {
 
