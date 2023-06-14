@@ -32,7 +32,6 @@ public class RedditPostService {
                 .addHeader("Authorization", "Bearer " + accessToken)
                 .addHeader("User-Agent", USER_AGENT)
                 .build();
-
         Response response = client.newCall(request).execute();
         String jsonData = response.body().string();
 
@@ -43,13 +42,13 @@ public class RedditPostService {
         List<Post> posts = new ArrayList<>();
         for (int i = 0; i < children.length(); i++) {
             JSONObject postJson = children.getJSONObject(i).getJSONObject("data");
+            String id = postJson.getString("id"); // Извлеките id из JSON
             String author = postJson.getString("author");
-            String date = postJson.getString("created_utc"); // Мне нужно будет преобразовать это в формат "X hours ago"
+            String date = postJson.getString("created_utc");
             String thumbnailUrl = postJson.getString("thumbnail");
             int commentCount = postJson.getInt("num_comments");
-            String fullImageUrl = postJson.getString("url"); // Это может не быть URL изображения, мне еще нужно будет проверить это
-            posts.add(new Post(author, date, thumbnailUrl, commentCount, fullImageUrl));
-            System.out.println(postJson);
+            String fullImageUrl = postJson.getString("url");
+            posts.add(new Post(id, author, date, thumbnailUrl, commentCount, fullImageUrl)); // Передайте id в конструктор Post
         }
 
         return posts;

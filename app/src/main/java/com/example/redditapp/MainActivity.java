@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -18,11 +17,14 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
     private RedditAuthService authService;
     private RedditPostService postService;
     private PostAdapter postAdapter;
+    private ExecutorService executorService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,37 +33,49 @@ public class MainActivity extends AppCompatActivity {
 
         authService = new RedditAuthService();
         postService = new RedditPostService();
+        executorService = Executors.newSingleThreadExecutor();
 
-        // Инициализируйте ваш RecyclerView и PostAdapter
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         postAdapter = new PostAdapter(new ArrayList<>());
         recyclerView.setAdapter(postAdapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
 
-        // Получите токен доступа и загрузите посты
-        new LoadPostsTask().execute();
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                int lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition();
+                if (lastVisibleItemPosition + 4 >= postAdapter.getItemCount()) {
+                    loadPosts();
+                }
+            }
+        });
+
+        loadPosts();
     }
 
-    private class LoadPostsTask extends AsyncTask<Void, Void, List<Post>> {
-        @Override
-        protected List<Post> doInBackground(Void... voids) {
+    private void loadPosts() {
+        executorService.execute(() -> {
             try {
                 String accessToken = authService.getAccessToken();
-                return postService.getTopPosts(accessToken);
+                List<Post> newPosts = postService.getTopPosts(accessToken);
+                runOnUiThread(() -> {
+                    List<Post> updatedPosts = new ArrayList<>(postAdapter.getPosts());
+                    updatedPosts.addAll(newPosts);
+                    postAdapter.setPosts(updatedPosts);
+                });
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
-                return null;
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show());
             }
-        }
+        });
+    }
 
-        @Override
-        protected void onPostExecute(List<Post> posts) {
-            if (posts != null) {
-                postAdapter.setPosts(posts);
-                postAdapter.notifyDataSetChanged();
-            } else {
-                Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show();
-            }
-        }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executorService.shutdown();
     }
 }

@@ -1,0 +1,10 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#FFFFFF"/> <!-- Замените на цвет вашего выбора -->
+    <corners
+        android:topLeftRadius="50dp"
+        android:topRightRadius="50dp"
+        android:bottomRightRadius="0dp"
+        android:bottomLeftRadius="50dp" />
+    <stroke android:width="3dp" android:color="#FF3D00" /> <!-- Замените на цвет вашего выбора -->
+</shape>
+

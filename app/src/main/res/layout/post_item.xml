@@ -4,25 +4,33 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="22dp"
+    android:layout_margin="10dp"
+    android:background="@drawable/background"
+    >
 
     <FrameLayout
         android:id="@+id/image_block"
         android:layout_width="match_parent"
         android:layout_height="200dp">
 
-        <ImageView
+        <com.makeramen.roundedimageview.RoundedImageView
             android:id="@+id/thumbnail"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginBottom="3dp"
             android:scaleType="centerCrop"
-            android:contentDescription="@string/thumbnail_of_image" />
+            android:contentDescription="@string/thumbnail_of_image"
+            app:riv_corner_radius_top_left="64dp"
+            app:riv_corner_radius_bottom_right="64dp"
+            app:riv_border_width="2dp"
+            app:riv_border_color="#7C4DFF"/>
 
         <ImageButton
             android:id="@+id/downloadButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
+            android:layout_gravity="top|end"
             android:background="@android:color/transparent"
             android:contentDescription="@string/icon_of_download_image"
             android:minWidth="48dp"
@@ -42,15 +50,16 @@
             android:layout_weight="1"
             android:textSize="20sp"/>
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/comment_count_card"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             app:cardBackgroundColor="#FF5722"
             app:cardCornerRadius="20dp"
-            app:strokeColor="#F60707"
-            app:cardElevation="20dp">
+            app:strokeColor="#150606"
+            app:strokeWidth="1.5dp"
+            app:cardElevation="5dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -74,7 +83,7 @@
 
             </LinearLayout>
 
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
