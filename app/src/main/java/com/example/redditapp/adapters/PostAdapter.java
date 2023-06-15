@@ -1,5 +1,8 @@
 package com.example.redditapp.adapters;
 
+import static com.example.redditapp.utils.Utils.getTimeAgo;
+import static com.example.redditapp.utils.Utils.isValidUrl;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +14,6 @@ import com.bumptech.glide.Glide;
 import com.example.redditapp.R;
 import com.example.redditapp.models.Post;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 
 public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
@@ -32,7 +33,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
     public void onBindViewHolder(PostViewHolder holder, int position) {
         Post post = posts.get(position);
         holder.author.setText(post.getAuthor());
-        holder.date.setText(post.getDate());
+        double timeDouble = Double.parseDouble(post.getDate());
+        long timeMillis = (long) timeDouble * 1000;
+        holder.date.setText(getTimeAgo(timeMillis));
         holder.commentCount.setText(String.valueOf(post.getCommentCount()));
 
         if (isValidUrl(post.getThumbnailUrl())) {
@@ -40,15 +43,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
             holder.imageBlock.setVisibility(View.VISIBLE);
         } else {
             holder.imageBlock.setVisibility(View.GONE);
-        }
-    }
-
-    private boolean isValidUrl(String url) {
-        try {
-            new URL(url);
-            return true;
-        } catch (MalformedURLException e) {
-            return false;
         }
     }
 
