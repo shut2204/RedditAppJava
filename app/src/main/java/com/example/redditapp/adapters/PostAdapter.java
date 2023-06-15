@@ -1,8 +1,9 @@
 package com.example.redditapp.adapters;
 
-import static com.example.redditapp.utils.Utils.getTimeAgo;
-import static com.example.redditapp.utils.Utils.isValidUrl;
+import static com.example.redditapp.utils.Utils.*;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,6 +42,12 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         if (isValidUrl(post.getThumbnailUrl())) {
             Glide.with(holder.thumbnail.getContext()).load(post.getThumbnailUrl()).into(holder.thumbnail);
             holder.imageBlock.setVisibility(View.VISIBLE);
+
+            holder.thumbnail.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(post.getFullImageUrl()));
+                v.getContext().startActivity(intent);
+            });
         } else {
             holder.imageBlock.setVisibility(View.GONE);
         }

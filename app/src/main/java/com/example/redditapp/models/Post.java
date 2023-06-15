@@ -1,7 +1,7 @@
 package com.example.redditapp.models;
 
 public class Post {
-    private String id; // Добавьте это поле
+    private final String id; // Добавьте это поле
     private final String author;
     private final String date; // Может быть типа String, если вы хотите хранить дату в формате "X hours ago"
     private final String thumbnailUrl; // URL изображения-миниатюры
