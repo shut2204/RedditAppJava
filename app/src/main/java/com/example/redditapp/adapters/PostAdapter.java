@@ -51,15 +51,28 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         } else {
             holder.imageBlock.setVisibility(View.GONE);
         }
+
+
+        holder.itemView.setScaleX(0);
+        holder.itemView.setScaleY(0);
+        holder.itemView.animate().scaleX(1).scaleY(1).setDuration(500).start();
+
+        holder.thumbnail.setRotation(0);
+        holder.thumbnail.animate().rotation(360).setDuration(500).start();
+
+//        holder.itemView.setAlpha(0);
+//        holder.itemView.animate().alpha(1).setDuration(500).start();
+
+//        holder.itemView.setRotation(0);
+//        holder.itemView.animate().rotation(360).setDuration(500).start();
+
+//        holder.itemView.setTranslationX(-1000);
+//        holder.itemView.animate().translationX(0).setDuration(500).start();
     }
 
     @Override
     public int getItemCount() {
         return posts.size();
-    }
-
-    public List<Post> getPosts() {
-        return posts;
     }
 
     public void setPosts(List<Post> newPosts) {

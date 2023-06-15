@@ -2,6 +2,7 @@ package com.example.redditapp;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(postAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -58,10 +60,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (postViewModel.getPosts() == null || postViewModel.getPosts().isEmpty()) {
+        // Observe the LiveData in the ViewModel
+        postViewModel.getPosts().observe(this, newPosts -> {
+            // Update the adapter when the data changes
+            postAdapter.setPosts(newPosts);
+        });
+
+        if (postViewModel.getPosts().getValue() == null || postViewModel.getPosts().getValue().isEmpty()) {
             loadPosts();
-        } else {
-            postAdapter.setPosts(postViewModel.getPosts());
         }
     }
 
@@ -71,13 +77,12 @@ public class MainActivity extends AppCompatActivity {
                 String accessToken = authService.getAccessToken();
                 List<Post> newPosts = postService.getTopPosts(accessToken);
                 runOnUiThread(() -> {
-                    List<Post> updatedPosts = postViewModel.getPosts();
+                    List<Post> updatedPosts = postViewModel.getPosts().getValue();
                     if (updatedPosts == null) {
                         updatedPosts = new ArrayList<>();
                     }
                     updatedPosts.addAll(newPosts);
-                    postViewModel.setPosts(updatedPosts);
-                    postAdapter.setPosts(updatedPosts);
+                    postViewModel.getPosts().postValue(updatedPosts); // Update the LiveData
                 });
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
@@ -91,11 +96,5 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         executorService.shutdown();
     }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        postViewModel.setPosts(postAdapter.getPosts());
-    }
-
 }
+
