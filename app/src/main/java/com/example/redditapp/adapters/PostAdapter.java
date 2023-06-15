@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.redditapp.MainActivity;
 import com.example.redditapp.R;
 import com.example.redditapp.models.Post;
 
@@ -38,6 +39,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         long timeMillis = (long) timeDouble * 1000;
         holder.date.setText(getTimeAgo(timeMillis));
         holder.commentCount.setText(String.valueOf(post.getCommentCount()));
+        String imageUrl = post.getFullImageUrl();
+
 
         if (isValidUrl(post.getThumbnailUrl())) {
             Glide.with(holder.thumbnail.getContext()).load(post.getThumbnailUrl()).into(holder.thumbnail);
@@ -48,6 +51,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
                 intent.setData(Uri.parse(post.getFullImageUrl()));
                 v.getContext().startActivity(intent);
             });
+            if ((imageUrl.endsWith(".jpg") || imageUrl.endsWith(".png"))) {
+                holder.downloadButton.setOnClickListener(v -> {
+                    // Check permission and save image to gallery
+                    MainActivity activity = (MainActivity) v.getContext();
+                    activity.requestPermission(post.getFullImageUrl());
+                });
+            }else {
+                holder.downloadButton.setVisibility(View.GONE);
+            }
+
         } else {
             holder.imageBlock.setVisibility(View.GONE);
         }
