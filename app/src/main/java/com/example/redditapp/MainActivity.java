@@ -1,6 +1,7 @@
 package com.example.redditapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -9,6 +10,7 @@ import android.widget.Toast;
 
 import com.example.redditapp.adapters.PostAdapter;
 import com.example.redditapp.models.Post;
+import com.example.redditapp.models.PostViewModel;
 import com.example.redditapp.services.RedditAuthService;
 import com.example.redditapp.services.RedditPostService;
 
@@ -21,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
+    private PostViewModel postViewModel;
     private RedditAuthService authService;
     private RedditPostService postService;
     private PostAdapter postAdapter;
@@ -30,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        postViewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
         authService = new RedditAuthService();
         postService = new RedditPostService();
@@ -53,7 +58,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        loadPosts();
+        if (postViewModel.getPosts() == null || postViewModel.getPosts().isEmpty()) {
+            loadPosts();
+        } else {
+            postAdapter.setPosts(postViewModel.getPosts());
+        }
     }
 
     private void loadPosts() {
@@ -62,8 +71,12 @@ public class MainActivity extends AppCompatActivity {
                 String accessToken = authService.getAccessToken();
                 List<Post> newPosts = postService.getTopPosts(accessToken);
                 runOnUiThread(() -> {
-                    List<Post> updatedPosts = new ArrayList<>(postAdapter.getPosts());
+                    List<Post> updatedPosts = postViewModel.getPosts();
+                    if (updatedPosts == null) {
+                        updatedPosts = new ArrayList<>();
+                    }
                     updatedPosts.addAll(newPosts);
+                    postViewModel.setPosts(updatedPosts);
                     postAdapter.setPosts(updatedPosts);
                 });
             } catch (IOException | JSONException e) {
@@ -78,4 +91,11 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         executorService.shutdown();
     }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        postViewModel.setPosts(postAdapter.getPosts());
+    }
+
 }
