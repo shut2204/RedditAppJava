@@ -1,15 +1,16 @@
 package com.example.redditapp;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.redditapp.adapters.PostAdapter;
 import com.example.redditapp.models.Post;
@@ -23,6 +24,7 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayoutManager layoutManager;
     private RecyclerView recyclerView;
     private ImageUtils imageUtils;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private boolean isLoading = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,32 +58,65 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(postAdapter);
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setItemAnimator(null);
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-
                 int lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition();
-                if (lastVisibleItemPosition + 4 >= postAdapter.getItemCount()) {
+                if (lastVisibleItemPosition + 3 >= postAdapter.getItemCount()) {
                     loadPosts();
                 }
             }
         });
 
-        // Observe the LiveData in the ViewModel
-        postViewModel.getPosts().observe(this, newPosts -> {
-            // Update the adapter when the data changes
-            postAdapter.setPosts(newPosts);
+
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            postService.resetAfter();
+            refreshPosts();
         });
+
+
+        postViewModel.getPosts().observe(this, newPosts -> postAdapter.setPosts(newPosts));
 
         if (postViewModel.getPosts().getValue() == null || postViewModel.getPosts().getValue().isEmpty()) {
             loadPosts();
         }
     }
 
+    private void refreshPosts() {
+        executorService.execute(() -> {
+            try {
+                String accessToken = authService.getAccessToken();
+                List<Post> newPosts = postService.getTopPosts(accessToken);
+                runOnUiThread(() -> {
+                    List<Post> updatedPosts = postViewModel.getPosts().getValue();
+                    if (updatedPosts == null) {
+                        updatedPosts = new ArrayList<>();
+                    }
+
+                    updatedPosts.clear();
+                    updatedPosts.addAll(newPosts);
+                    postViewModel.getPosts().postValue(updatedPosts);
+                    swipeRefreshLayout.setRefreshing(false);
+                });
+            } catch (IOException | JSONException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show();
+                    swipeRefreshLayout.setRefreshing(false);
+                });
+            }
+        });
+    }
     private void loadPosts() {
+        if (isLoading) {
+            return;
+        }
+
+        isLoading = true;
         executorService.execute(() -> {
             try {
                 String accessToken = authService.getAccessToken();
@@ -91,20 +128,25 @@ public class MainActivity extends AppCompatActivity {
                     }
                     updatedPosts.addAll(newPosts);
                     postViewModel.getPosts().postValue(updatedPosts); // Update the LiveData
+                    isLoading = false;
                 });
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show();
+                    isLoading = false;
+                });
             }
         });
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         executorService.shutdown();
     }
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         // Save RecyclerView state
         outState.putParcelable(RECYCLER_VIEW_POSITION_KEY, layoutManager.onSaveInstanceState());
@@ -115,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
         if (savedInstanceState != null) {
             Parcelable savedRecyclerLayoutState = savedInstanceState.getParcelable(RECYCLER_VIEW_POSITION_KEY);
-            recyclerView.getLayoutManager().onRestoreInstanceState(savedRecyclerLayoutState);
+            Objects.requireNonNull(recyclerView.getLayoutManager()).onRestoreInstanceState(savedRecyclerLayoutState);
             Log.d("MainActivity", "onRestoreInstanceState: restored position");
         }
     }

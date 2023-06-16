@@ -1,6 +1,7 @@
 package com.example.redditapp.adapters;
 
-import static com.example.redditapp.utils.Utils.*;
+import static com.example.redditapp.utils.Utils.getTimeAgo;
+import static com.example.redditapp.utils.Utils.isValidUrl;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -25,6 +27,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         this.posts = posts;
     }
 
+    @NonNull
     @Override
     public PostViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.post_item, parent, false);
@@ -48,17 +51,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
             Glide.with(holder.thumbnail.getContext()).load(thumbnailUrl).into(holder.thumbnail);
             holder.imageBlock.setVisibility(View.VISIBLE);
 
-            holder.thumbnail.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(post.getFullImageUrl()));
-                v.getContext().startActivity(intent);
-            });
+            listenThumbnail(holder, post);
             if ((imageUrl.endsWith(".jpg") || imageUrl.endsWith(".png"))) {
-                holder.downloadButton.setOnClickListener(v -> {
-                    // Check permission and save image to gallery
-                    MainActivity activity = (MainActivity) v.getContext();
-                    activity.requestPermission(post.getFullImageUrl());
-                });
+                listenDownloadButton(holder, post);
             }else {
                 holder.downloadButton.setVisibility(View.GONE);
             }
@@ -66,15 +61,29 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         } else {
             holder.imageBlock.setVisibility(View.GONE);
         }
-
-
+        animateObjects(holder);
+    }
+    private static void listenDownloadButton(PostViewHolder holder, Post post) {
+        holder.downloadButton.setOnClickListener(v -> {
+            // Check permission and save image to gallery
+            MainActivity activity = (MainActivity) v.getContext();
+            activity.requestPermission(post.getFullImageUrl());
+        });
+    }
+    private static void listenThumbnail(PostViewHolder holder, Post post) {
+        holder.thumbnail.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(post.getFullImageUrl()));
+            v.getContext().startActivity(intent);
+        });
+    }
+    private static void animateObjects(PostViewHolder holder) {
         holder.itemView.setScaleX(0);
         holder.itemView.setScaleY(0);
         holder.itemView.animate().scaleX(1).scaleY(1).setDuration(500).start();
 
         holder.thumbnail.setRotation(0);
         holder.thumbnail.animate().rotation(360).setDuration(500).start();
-
 //        holder.itemView.setAlpha(0);
 //        holder.itemView.animate().alpha(1).setDuration(500).start();
 
@@ -84,19 +93,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
 //        holder.itemView.setTranslationX(-1000);
 //        holder.itemView.animate().translationX(0).setDuration(500).start();
     }
-
     @Override
     public int getItemCount() {
         return posts.size();
     }
-
     public void setPosts(List<Post> newPosts) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new PostDiffCallback(posts, newPosts));
         this.posts.clear();
         this.posts.addAll(newPosts);
         diffResult.dispatchUpdatesTo(this);
     }
-
     private static class PostDiffCallback extends DiffUtil.Callback {
         private final List<Post> oldPosts;
         private final List<Post> newPosts;

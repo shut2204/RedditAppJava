@@ -17,7 +17,6 @@ import okhttp3.Response;
 public class RedditPostService {
     private static final String TOP_POSTS_URL = "https://oauth.reddit.com/top.json";
     private static final String USER_AGENT = "MyApp/0.1 by jester_2204";
-
     private final OkHttpClient client;
     private String after = null;
 
@@ -42,7 +41,7 @@ public class RedditPostService {
         List<Post> posts = new ArrayList<>();
         for (int i = 0; i < children.length(); i++) {
             JSONObject postJson = children.getJSONObject(i).getJSONObject("data");
-            String id = postJson.getString("id"); // Извлеките id из JSON
+            String id = postJson.getString("id");
             String author = postJson.getString("author");
             String date = postJson.getString("created_utc");
             String thumbnailUrl = postJson.getString("thumbnail");
@@ -53,4 +52,9 @@ public class RedditPostService {
 
         return posts;
     }
+
+    public void resetAfter() {
+        this.after = null;
+    }
+
 }
