@@ -3,6 +3,9 @@ package com.example.redditapp.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+/**
+ * Модель данных для представления поста.
+ */
 public class Post implements Parcelable {
     private final String id;
     private final String author;
@@ -11,6 +14,16 @@ public class Post implements Parcelable {
     private final int commentCount;
     private final String fullImageUrl;
 
+    /**
+     * Конструктор класса Post.
+     *
+     * @param id            Идентификатор поста.
+     * @param author        Автор поста.
+     * @param date          Дата создания поста.
+     * @param thumbnailUrl  URL-адрес миниатюры поста.
+     * @param commentCount  Количество комментариев к посту.
+     * @param fullImageUrl  URL-адрес полного изображения поста.
+     */
     public Post(String id, String author, String date, String thumbnailUrl, int commentCount, String fullImageUrl) {
         this.id = id;
         this.author = author;
@@ -41,26 +54,56 @@ public class Post implements Parcelable {
         }
     };
 
+    /**
+     * Возвращает идентификатор поста.
+     *
+     * @return Идентификатор поста.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Возвращает автора поста.
+     *
+     * @return Автор поста.
+     */
     public String getAuthor() {
         return author;
     }
 
+    /**
+     * Возвращает дату создания поста.
+     *
+     * @return Дата создания поста.
+     */
     public String getDate() {
         return date;
     }
 
+    /**
+     * Возвращает URL-адрес миниатюры поста.
+     *
+     * @return URL-адрес миниатюры поста.
+     */
     public String getThumbnailUrl() {
         return thumbnailUrl;
     }
 
+    /**
+     * Возвращает количество комментариев к посту.
+     *
+     * @return Количество комментариев к посту.
+     */
     public int getCommentCount() {
         return commentCount;
     }
 
+    /**
+     * Возвращает URL-адрес полного изображения поста.
+     *
+     * @return URL-адрес полного изображения поста.
+     */
     public String getFullImageUrl() {
         return fullImageUrl;
     }

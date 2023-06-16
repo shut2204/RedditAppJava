@@ -10,6 +10,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.redditapp.R;
 
+/**
+ * ViewHolder для элемента списка постов.
+ */
 public class PostViewHolder extends RecyclerView.ViewHolder {
     TextView author;
     TextView date;
@@ -18,6 +21,11 @@ public class PostViewHolder extends RecyclerView.ViewHolder {
     ImageButton downloadButton;
     FrameLayout imageBlock;
 
+    /**
+     * Конструктор ViewHolder.
+     *
+     * @param itemView View элемента списка.
+     */
     public PostViewHolder(View itemView) {
         super(itemView);
         author = itemView.findViewById(R.id.author);
@@ -28,5 +36,3 @@ public class PostViewHolder extends RecyclerView.ViewHolder {
         imageBlock = itemView.findViewById(R.id.image_block);
     }
 }
-
-

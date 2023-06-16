@@ -14,6 +14,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * Сервис для получения постов с Reddit.
+ */
 public class RedditPostService {
     private static final String TOP_POSTS_URL = "https://oauth.reddit.com/top.json";
     private static final String USER_AGENT = "MyApp/0.1 by jester_2204";
@@ -24,6 +27,14 @@ public class RedditPostService {
         this.client = new OkHttpClient();
     }
 
+    /**
+     * Получает список самых популярных постов с Reddit.
+     *
+     * @param accessToken Токен доступа для аутентификации.
+     * @return Список объектов Post.
+     * @throws IOException   Если произошла ошибка при выполнении HTTP-запроса.
+     * @throws JSONException Если произошла ошибка при обработке JSON-данных.
+     */
     public List<Post> getTopPosts(String accessToken) throws IOException, JSONException {
         Request request = new Request.Builder()
                 .url(TOP_POSTS_URL + "?limit=10" + (after != null ? "&after=" + after : ""))
@@ -47,14 +58,16 @@ public class RedditPostService {
             String thumbnailUrl = postJson.getString("thumbnail");
             int commentCount = postJson.getInt("num_comments");
             String fullImageUrl = postJson.getString("url");
-            posts.add(new Post(id, author, date, thumbnailUrl, commentCount, fullImageUrl)); // Передайте id в конструктор Post
+            posts.add(new Post(id, author, date, thumbnailUrl, commentCount, fullImageUrl));
         }
 
         return posts;
     }
 
+    /**
+     * Сбрасывает значение параметра "after" для получения новой порции постов.
+     */
     public void resetAfter() {
         this.after = null;
     }
-
 }

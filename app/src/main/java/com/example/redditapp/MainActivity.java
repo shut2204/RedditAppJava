@@ -28,6 +28,9 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Главная активность приложения.
+ */
 public class MainActivity extends AppCompatActivity {
     private static final String RECYCLER_VIEW_POSITION_KEY = "recycler_view_position";
     private PostViewModel postViewModel;
@@ -41,26 +44,34 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private boolean isLoading = false;
 
+    /**
+     * Метод вызывается при создании активности.
+     *
+     * @param savedInstanceState Сохраненное состояние активности.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Инициализация ViewModel
         postViewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
+        // Инициализация сервисов
         authService = new RedditAuthService();
         postService = new RedditPostService();
+
+        // Создание пула потоков
         executorService = Executors.newSingleThreadExecutor();
+
+        // Инициализация ImageUtils
         imageUtils = new ImageUtils(this);
 
-        recyclerView = findViewById(R.id.recyclerView); // Initialize recyclerView here
-        postAdapter = new PostAdapter(new ArrayList<>());
-        recyclerView.setAdapter(postAdapter);
-        layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setItemAnimator(null);
+        // Настройка RecyclerView
+        setupRecyclerView();
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
 
+        // Установка слушателя для обработки прокрутки RecyclerView
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -72,45 +83,49 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        // Установка слушателя для обновления постов при свайпе
         swipeRefreshLayout.setOnRefreshListener(() -> {
             postService.resetAfter();
             refreshPosts();
         });
 
-
+        // Наблюдение за изменениями списка постов и обновление адаптера
         postViewModel.getPosts().observe(this, newPosts -> postAdapter.setPosts(newPosts));
 
+        // Загрузка постов, если список пустой
         if (postViewModel.getPosts().getValue() == null || postViewModel.getPosts().getValue().isEmpty()) {
             loadPosts();
         }
     }
 
+    /**
+     * Метод для обновления списка постов.
+     */
     private void refreshPosts() {
         executorService.execute(() -> {
             try {
                 String accessToken = authService.getAccessToken();
                 List<Post> newPosts = postService.getTopPosts(accessToken);
-                runOnUiThread(() -> {
-                    List<Post> updatedPosts = postViewModel.getPosts().getValue();
-                    if (updatedPosts == null) {
-                        updatedPosts = new ArrayList<>();
-                    }
 
-                    updatedPosts.clear();
-                    updatedPosts.addAll(newPosts);
-                    postViewModel.getPosts().postValue(updatedPosts);
+                // Обновление постов на UI-потоке и остановка индикатора обновления
+                runOnUiThread(() -> {
+                    updatePosts(newPosts);
                     swipeRefreshLayout.setRefreshing(false);
                 });
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
+                    // Отображение сообщения об ошибке при загрузке постов и остановка индикатора обновления
                     Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show();
                     swipeRefreshLayout.setRefreshing(false);
                 });
             }
         });
     }
+
+    /**
+     * Метод для загрузки новых постов.
+     */
     private void loadPosts() {
         if (isLoading) {
             return;
@@ -121,18 +136,16 @@ public class MainActivity extends AppCompatActivity {
             try {
                 String accessToken = authService.getAccessToken();
                 List<Post> newPosts = postService.getTopPosts(accessToken);
+
+                // Обновление постов на UI-потоке и сброс флага загрузки
                 runOnUiThread(() -> {
-                    List<Post> updatedPosts = postViewModel.getPosts().getValue();
-                    if (updatedPosts == null) {
-                        updatedPosts = new ArrayList<>();
-                    }
-                    updatedPosts.addAll(newPosts);
-                    postViewModel.getPosts().postValue(updatedPosts); // Update the LiveData
+                    updatePosts(newPosts);
                     isLoading = false;
                 });
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
+                    // Отображение сообщения об ошибке при загрузке постов и сброс флага загрузки
                     Toast.makeText(MainActivity.this, "Ошибка при загрузке постов", Toast.LENGTH_SHORT).show();
                     isLoading = false;
                 });
@@ -140,18 +153,69 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Метод для обновления списка постов и уведомления адаптера об изменениях.
+     *
+     * @param newPosts Новый список постов.
+     */
+    private void updatePosts(List<Post> newPosts) {
+        List<Post> updatedPosts = postViewModel.getPosts().getValue();
+        if (updatedPosts == null) {
+            updatedPosts = new ArrayList<>();
+            postViewModel.getPosts().postValue(updatedPosts);
+        }
+        updatedPosts.addAll(newPosts);
+        postViewModel.getPosts().postValue(updatedPosts);
+    }
+
+    /**
+     * Метод для настройки RecyclerView.
+     */
+    private void setupRecyclerView() {
+        recyclerView = findViewById(R.id.recyclerView);
+        postAdapter = new PostAdapter(new ArrayList<>());
+        recyclerView.setAdapter(postAdapter);
+        layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(null);
+    }
+
+    /**
+     * Метод для запроса разрешения и сохранения изображения.
+     *
+     * @param imageUrl URL изображения.
+     */
+    public void requestPermission(String imageUrl) {
+        imageUtils.requestPermission(imageUrl);
+    }
+
+    /**
+     * Метод, вызываемый при уничтожении активности.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        executorService.shutdown();
+        executorService.shutdownNow();
     }
+
+    /**
+     * Метод, вызываемый для сохранения состояния активности при повороте экрана или других событиях.
+     *
+     * @param outState Объект Bundle для сохранения состояния.
+     */
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        // Save RecyclerView state
+        // Сохранение состояния RecyclerView
         outState.putParcelable(RECYCLER_VIEW_POSITION_KEY, layoutManager.onSaveInstanceState());
         Log.d("MainActivity", "onSaveInstanceState: saved position");
     }
+
+    /**
+     * Метод, вызываемый для восстановления состояния активности после поворота экрана или других событий.
+     *
+     * @param savedInstanceState Сохраненное состояние активности.
+     */
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -160,8 +224,5 @@ public class MainActivity extends AppCompatActivity {
             Objects.requireNonNull(recyclerView.getLayoutManager()).onRestoreInstanceState(savedRecyclerLayoutState);
             Log.d("MainActivity", "onRestoreInstanceState: restored position");
         }
-    }
-    public void requestPermission(String imageUrl) {
-        imageUtils.requestPermission(imageUrl);
     }
 }

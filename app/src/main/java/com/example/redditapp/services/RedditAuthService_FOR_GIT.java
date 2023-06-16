@@ -13,6 +13,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+/**
+ * Сервис для аутентификации на Reddit и получения доступа к API.
+ */
 public class RedditAuthService_FOR_GIT {
     private static final String TOKEN_URL = "https://www.reddit.com/api/v1/access_token";
     private static final String CLIENT_ID = "YOUR_CLIENT_ID";
@@ -26,6 +29,13 @@ public class RedditAuthService_FOR_GIT {
         this.client = new OkHttpClient();
     }
 
+    /**
+     * Получает токен доступа для аутентификации на Reddit.
+     *
+     * @return Токен доступа.
+     * @throws IOException   Если произошла ошибка при выполнении HTTP-запроса.
+     * @throws JSONException Если произошла ошибка при обработке JSON-данных.
+     */
     public String getAccessToken() throws IOException, JSONException {
         RequestBody body = new FormBody.Builder()
                 .add("grant_type", "password")

@@ -20,9 +20,17 @@ import com.example.redditapp.models.Post;
 
 import java.util.List;
 
+/**
+ * Адаптер для списка постов.
+ */
 public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
     private final List<Post> posts;
 
+    /**
+     * Конструктор адаптера.
+     *
+     * @param posts Список постов.
+     */
     public PostAdapter(List<Post> posts) {
         this.posts = posts;
     }
@@ -30,12 +38,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
     @NonNull
     @Override
     public PostViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        // Создание ViewHolder для элемента списка.
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.post_item, parent, false);
         return new PostViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(PostViewHolder holder, int position) {
+        // Привязка данных к ViewHolder.
         Post post = posts.get(position);
         holder.author.setText(post.getAuthor());
         double timeDouble = Double.parseDouble(post.getDate());
@@ -45,16 +55,21 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         String imageUrl = post.getFullImageUrl();
         String thumbnailUrl = post.getThumbnailUrl();
 
-
         if (isValidUrl(thumbnailUrl)) {
+            // Загрузка изображения с использованием библиотеки Glide
             thumbnailUrl = android.text.Html.fromHtml(thumbnailUrl).toString();
-            Glide.with(holder.thumbnail.getContext()).load(thumbnailUrl).into(holder.thumbnail);
+            Glide.with(holder.thumbnail.getContext())
+                    .load(thumbnailUrl)
+                    .placeholder(R.drawable.placeholder) // Заглушка во время загрузки
+                    .error(R.drawable.error) // Заглушка в случае ошибки
+                    .into(holder.thumbnail);
+
             holder.imageBlock.setVisibility(View.VISIBLE);
 
             listenThumbnail(holder, post);
             if ((imageUrl.endsWith(".jpg") || imageUrl.endsWith(".png"))) {
                 listenDownloadButton(holder, post);
-            }else {
+            } else {
                 holder.downloadButton.setVisibility(View.GONE);
             }
 
@@ -63,20 +78,41 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         }
         animateObjects(holder);
     }
+
+    /**
+     * Метод для прослушивания нажатия на кнопку скачивания изображения.
+     *
+     * @param holder ViewHolder элемента списка.
+     * @param post   Пост.
+     */
     private static void listenDownloadButton(PostViewHolder holder, Post post) {
         holder.downloadButton.setOnClickListener(v -> {
-            // Check permission and save image to gallery
+            // Проверка разрешений и сохранение изображения в галерее
             MainActivity activity = (MainActivity) v.getContext();
             activity.requestPermission(post.getFullImageUrl());
         });
     }
+
+    /**
+     * Метод для прослушивания нажатия на миниатюру изображения.
+     *
+     * @param holder ViewHolder элемента списка.
+     * @param post   Пост.
+     */
     private static void listenThumbnail(PostViewHolder holder, Post post) {
         holder.thumbnail.setOnClickListener(v -> {
+            // Открытие полноразмерного изображения во внешнем приложении
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse(post.getFullImageUrl()));
             v.getContext().startActivity(intent);
         });
     }
+
+    /**
+     * Метод для анимации элементов списка.
+     *
+     * @param holder ViewHolder элемента списка.
+     */
     private static void animateObjects(PostViewHolder holder) {
         holder.itemView.setScaleX(0);
         holder.itemView.setScaleY(0);
@@ -84,25 +120,29 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
 
         holder.thumbnail.setRotation(0);
         holder.thumbnail.animate().rotation(360).setDuration(500).start();
-//        holder.itemView.setAlpha(0);
-//        holder.itemView.animate().alpha(1).setDuration(500).start();
-
-//        holder.itemView.setRotation(0);
-//        holder.itemView.animate().rotation(360).setDuration(500).start();
-
-//        holder.itemView.setTranslationX(-1000);
-//        holder.itemView.animate().translationX(0).setDuration(500).start();
     }
+
     @Override
     public int getItemCount() {
+        // Возвращает количество элементов в списке.
         return posts.size();
     }
+
+    /**
+     * Метод для обновления списка постов.
+     *
+     * @param newPosts Новый список постов.
+     */
     public void setPosts(List<Post> newPosts) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new PostDiffCallback(posts, newPosts));
         this.posts.clear();
         this.posts.addAll(newPosts);
         diffResult.dispatchUpdatesTo(this);
     }
+
+    /**
+     * Класс для определения разницы между старым и новым списком постов.
+     */
     private static class PostDiffCallback extends DiffUtil.Callback {
         private final List<Post> oldPosts;
         private final List<Post> newPosts;
@@ -132,5 +172,4 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
             return oldPosts.get(oldItemPosition).getCommentCount() == newPosts.get(newItemPosition).getCommentCount();
         }
     }
-
 }
