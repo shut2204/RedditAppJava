@@ -40,10 +40,12 @@ public class PostAdapter extends RecyclerView.Adapter<PostViewHolder> {
         holder.date.setText(getTimeAgo(timeMillis));
         holder.commentCount.setText(String.valueOf(post.getCommentCount()));
         String imageUrl = post.getFullImageUrl();
+        String thumbnailUrl = post.getThumbnailUrl();
 
 
-        if (isValidUrl(post.getThumbnailUrl())) {
-            Glide.with(holder.thumbnail.getContext()).load(post.getThumbnailUrl()).into(holder.thumbnail);
+        if (isValidUrl(thumbnailUrl)) {
+            thumbnailUrl = android.text.Html.fromHtml(thumbnailUrl).toString();
+            Glide.with(holder.thumbnail.getContext()).load(thumbnailUrl).into(holder.thumbnail);
             holder.imageBlock.setVisibility(View.VISIBLE);
 
             holder.thumbnail.setOnClickListener(v -> {
